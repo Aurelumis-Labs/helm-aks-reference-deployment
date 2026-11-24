@@ -30,6 +30,8 @@ spec:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
           env:
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
             - name: APP_VERSION
               value: {{ .Values.image.tag | quote }}
             {{- range $key, $value := .Values.env }}
@@ -55,3 +57,9 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
