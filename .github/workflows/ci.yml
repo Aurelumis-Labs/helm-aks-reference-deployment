@@ -1,0 +1,27 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Lint (all environments)
+        run: |
+          helm lint chart
+          helm lint chart -f chart/values-dev.yaml
+          helm lint chart -f chart/values-prod.yaml
+      - name: Render (all environments)
+        run: |
+          helm template hello chart -f chart/values-dev.yaml > /dev/null
+          helm template hello chart -f chart/values-prod.yaml > /dev/null
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image (no push)
+        run: docker build -t hello-flask:ci app/

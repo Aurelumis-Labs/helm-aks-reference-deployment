@@ -1,0 +1,8 @@
+replicaCount: 1
+env:
+  APP_ENV: dev
+service:
+  type: NodePort
+  nodePort: 30080
+podDisruptionBudget:
+  enabled: false

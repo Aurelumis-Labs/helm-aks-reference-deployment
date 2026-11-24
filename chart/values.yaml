@@ -1,0 +1,27 @@
+replicaCount: 2
+
+image:
+  repository: hello-flask
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+env:
+  APP_ENV: local
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+  nodePort: null
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
