@@ -1,0 +1,51 @@
+# Stretch goal: build the image, push to ACR, deploy the chart to AKS.
+# Replace the <placeholders> and create the service connections first.
+trigger:
+  branches:
+    include: [main]
+
+variables:
+  acrName: <your-acr-name>
+  imageRepo: hello-flask
+  tag: $(Build.BuildId)
+
+stages:
+  - stage: Build
+    jobs:
+      - job: BuildPush
+        pool: { vmImage: ubuntu-latest }
+        steps:
+          - task: AzureCLI@2
+            displayName: Build and push image with ACR Tasks
+            inputs:
+              azureSubscription: <arm-service-connection>
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az acr build -r $(acrName) -t $(imageRepo):$(tag) app/
+          - script: helm lint chart -f chart/values-dev.yaml
+            displayName: Helm lint
+  - stage: DeployDev
+    dependsOn: Build
+    jobs:
+      - deployment: Dev
+        environment: dev
+        pool: { vmImage: ubuntu-latest }
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - task: AzureCLI@2
+                  displayName: helm upgrade --install
+                  inputs:
+                    azureSubscription: <arm-service-connection>
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az aks get-credentials -g <rg> -n <aks-name> --overwrite-existing
+                      helm upgrade --install hello chart \
+                        -f chart/values-dev.yaml \
+                        --set image.repository=$(acrName).azurecr.io/$(imageRepo) \
+                        --set image.tag=$(tag) \
+                        --atomic --timeout 3m
